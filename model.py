@@ -6,6 +6,8 @@ from enum import Enum
 class Message(BaseModel):
     role: str
     content: str
+    # updatedAt: datetime | None = None
+
 
 class SummaryChatRequest(BaseModel):
     content: str

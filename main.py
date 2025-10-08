@@ -2,7 +2,9 @@ from langchain.chains import SequentialChain, LLMChain
 from langchain.prompts import PromptTemplate
 from langchain.llms import OpenAI
 from fastapi import APIRouter, FastAPI
+from chat.ask import ask_service
 from extract_keywords_from_content import extract_keywords_from_content_service
+from firestore import fetch_notes
 from summarize import summarize_service
 from summarizeForDescription import summarizeForDescription_service
 from chat.summarizeChat import summary_chat_service
@@ -29,6 +31,10 @@ class SummarizeRequest(BaseModel):
 
 class KeywordRequest(BaseModel):
     content: str
+
+class AskRequest(BaseModel):
+    ask: str
+    session_id: str
 
 
 class SummaryChatFlexible(BaseModel):
@@ -60,22 +66,66 @@ def keyword_endpoint(payload: KeywordRequest):
 @app.post("/summarize")
 def summarize_endpoint(payload: SummarizeRequest):
     result = summarize_service(payload.content)
-    return {"summary": result}
+    summary = result.get('summary')
+    expected_questions = result.get('expected_questions')
+    print(result.get('summary'))
+    print(result.get('expected_questions'))
+    return { "summary": summary, "expected_questions": expected_questions }
 
 @router.post("/chat/{note_id}")
 def summary_chat_endpoint(note_id: str, payload: SummaryChatFlexible):
     text = payload.normalized_summary()
     history = payload.normalized_history()
     result = summary_chat_service(text, note_id, history)
-    return {"summary": result}
+    answer = result.get("answer")
+    expected_questions = result.get("expected_questions")
+    print(result.get("answer"))
+    print(result.get("expected_questions"))
+    return { "answer": answer, "expected_questions": expected_questions }
+
+
+@app.post("/ask")
+def ask_endpoint(payload: AskRequest):
+    result = ask_service(payload.ask)
+    answer = result.get("answer")
+    expected_question = result.get("expected_question")
+
+    # return {"answer": result}
+    return {
+        "answer": answer,
+        "expected_question": expected_question 
+    }
+
+
+@app.post("/ask/{session_id}")
+def ask_endpoint(payload: AskRequest, session_id: str):
+    result = ask_service(payload.ask, session_id)
+    answer = result.get("answer")
+    expected_question = result.get("expected_question")
+
+    print("answer: ", answer)
+    print("expected_question: ", expected_question)
+
+    # return {"answer": result}
+    return {
+        "answer": answer,
+        "expected_question": expected_question 
+    }
+
+
 
 app.include_router(router)
 
 from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, Response
 from starlette.requests import Request
 
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     print("422 detail:", exc.errors())
     return JSONResponse(status_code=422, content={"detail": exc.errors()})
+
+# Catch-all route for tracking/analytics requests
+@app.get("/hybridaction/{path:path}")
+async def ignore_tracking(path: str):
+    return Response(status_code=204)
