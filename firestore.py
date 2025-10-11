@@ -3,7 +3,7 @@ from typing import Any, Dict, List
 import firebase_admin  # pyright: ignore[reportMissingImports]
 from firebase_admin import credentials, firestore  # pyright: ignore[reportMissingImports]
 
-from model import FirebaseNoteContent
+from models.schemas import FirebaseNoteContent
 
 cred = credentials.Certificate("serviceAccountKey.json")
 firebase_admin.initialize_app(cred)

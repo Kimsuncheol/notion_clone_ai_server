@@ -1,0 +1,4 @@
+import os
+
+FIREBASE_PROJECT_ID = os.environ.get("FIREBASE_PROJECT_ID")
+FIREBASE_NOTES_COLLECTION = os.environ.get("FIREBASE_NOTES_COLLECTION", "notes")
