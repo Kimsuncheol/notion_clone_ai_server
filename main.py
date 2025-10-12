@@ -1,4 +1,5 @@
 import logging
+import os
 
 from fastapi import APIRouter, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -10,6 +11,7 @@ from chat.ask import ask_service
 from chat.summarizeChat import summary_chat_service
 from extract_keywords_from_content import extract_keywords_from_content_service
 from firestore import fetch_notes, db
+from dotenv import load_dotenv
 from services.ranker import blend, diversify, freshness, meta_match
 from services.store import NotesIndex, note_to_text, user_to_text
 from summarize import summarize_service
@@ -17,6 +19,14 @@ from summarizeForDescription import summarizeForDescription_service
 from langchain_openai import OpenAIEmbeddings
 from services.email.commentNotificationEmailer import send_comment_notification
 from services.email.likeNotificationEmailer import send_like_notification
+from markdownManual.markdownManual import markdown_manual_service
+
+load_dotenv()
+openai_api_key = os.getenv("OPENAI_API_KEY")
+if not openai_api_key:
+    raise RuntimeError(
+        "OPENAI_API_KEY is not set. Please configure it in the environment or .env file."
+    )
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +121,11 @@ class SummaryChatFlexible(BaseModel):
         history = self.chat_history if self.chat_history is not None else self.chatHistory
         return history or []
 
+
+class MarkdownManualRequest(BaseModel):
+    question: str
+    session_id: str
+
 @app.post("/summarizeForDescription")
 def summarize_endpoint(payload: SummarizeRequest):
     result = summarizeForDescription_service(payload.content)
@@ -169,6 +184,25 @@ def ask_endpoint(payload: AskRequest, session_id: str):
         "answer": answer,
         "expected_question": expected_question
     }
+
+
+@app.post("/markdown/manual")
+def markdown_manual_endpoint(payload: MarkdownManualRequest):
+    """
+    Get help with markdown grammar and syntax.
+
+    This endpoint provides assistance with markdown formatting questions,
+    maintaining conversation history per session.
+    """
+    try:
+        answer = markdown_manual_service(payload.question, payload.session_id)
+        return {"answer": answer}
+    except Exception as e:
+        logger.exception("Error in markdown manual service: %s", e)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Error processing markdown manual request: {str(e)}"
+        )
 
 
 @app.post("/notifications/comment")
