@@ -1,8 +1,3 @@
-from langchain.retrievers import EnsembleRetriever, BM25Retriever
-
-def build_ensemble(vectorstore, all_docs, k=50):
-    bm25 = BM25Retriever.from_texts(all_docs); bm25.k = k
-    vec = vectorstore.as_retriever(search_kwargs={"k": k})
-    return EnsembleRetriever(retrievers=[bm25, vec], weights=[0.3, 0.7])
-
-
+version https://git-lfs.github.com/spec/v1
+oid sha256:0efdb9ae29cb59b117a20b3c982b7741248209947e80b9ebc2881d9e67b69223
+size 308
