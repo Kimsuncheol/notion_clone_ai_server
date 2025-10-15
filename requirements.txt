@@ -1,1 +1,2 @@
-fastapi-mail>=1.4.0
+fastapi
+uvicorn[standard]fastapi-mail>=1.4.0
