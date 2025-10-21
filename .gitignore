@@ -3,3 +3,8 @@ serviceAccountKey.json
 path/to/bigfile.ext
 *.bin
 .env
+.env
+db/
+__pycache__/
+*.sqlite3
+*.bin
