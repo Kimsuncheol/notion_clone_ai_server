@@ -2,3 +2,4 @@ serviceAccountKey.json
 .envdb/
 path/to/bigfile.ext
 *.bin
+.env
